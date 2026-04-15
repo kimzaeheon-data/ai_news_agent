@@ -17,8 +17,9 @@ from openai import OpenAI
 AI_NEWS_RSS = "https://news.google.com/rss/search?q=AIOR인공지능ORLLMOR생성형AIORChatGPT&hl=ko&gl=KR&ceid=KR:ko"
 
 OPENAI_API_KEY = os.environ["OPENAI_API_KEY"]
-os.environ["DISCORD_WEBHOOK_URL"] = "https://discord.com/api/webhooks/1493781945342099468/RHA7sR6K6boWBguTHuOp3tQ4rx3sGbG5ieLJvZaOQKh-YJuVPJCIPL5N3zEr9yLRkcvg"
 DISCORD_WEBHOOK_URL = os.environ["DISCORD_WEBHOOK_URL"]
+
+print("웹훅:", DISCORD_WEBHOOK_URL)
 
 client = OpenAI(api_key=OPENAI_API_KEY)
 
