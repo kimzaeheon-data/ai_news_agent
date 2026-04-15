@@ -8,6 +8,7 @@ Original file is located at
 """
 
 import os
+from datetime import datetime
 import feedparser
 import requests
 from openai import OpenAI
@@ -48,13 +49,23 @@ def summarize_news(articles):
 
 {news_text}
 
-다음 형식으로 한국어로 요약해라.
+다음 형식으로 한국어로 정리해라.
 
-1. 오늘의 핵심 AI 뉴스 5개
-2. 왜 중요한가
-3. 취업 준비생 관점 메모
+[출력 형식]
+## 1. 오늘의 핵심 AI 뉴스
+- 핵심 뉴스 5개를 bullet point로 정리
 
-짧고 명확하게 작성하라.
+## 2. 왜 중요한가
+- 3~5줄 bullet point로 정리
+
+## 3. 취업 준비생 관점 메모
+- 3줄 이내 bullet point로 정리
+
+조건:
+- 반드시 한국어
+- 너무 장황하지 않게
+- 디스코드에서 보기 좋게 정리
+- 각 항목은 bullet point(-) 사용
 """
 
   response = client.responses.create(
@@ -63,6 +74,24 @@ def summarize_news(articles):
   )
 
   return response.output_text
+
+def build_discord_message(summary):
+    now = datetime.now()
+    weekday_kr = ["월", "화", "수", "목", "금", "토", "일"]
+    date_str = f"{now.year}-{now.month:02d}-{now.day:02d} ({weekday_kr[now.weekday()]})"
+
+    header = (
+        f"🤖 **AI 뉴스 봇** | {date_str}\n\n"
+        f"━━━━━━━━━━━━━━━━━━\n"
+        f"📌 **오늘의 AI 뉴스 브리핑**\n"
+        f"━━━━━━━━━━━━━━━━━━\n\n"
+    )
+
+    footer = "\n\n━━━━━━━━━━━━━━━━━━\n#AI #뉴스브리핑 #취업준비"
+
+    message = header + summary + footer
+
+    return message[:1900]  # 디스코드 2000자 제한 대비
 
 #디스코드 전송
 
