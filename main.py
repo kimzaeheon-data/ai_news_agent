@@ -46,6 +46,7 @@ def summarize_news(articles):
 
 아래 형식의 JSON으로만 답해라.
 설명은 쓰지 말고 JSON만 출력해라.
+반드시 코드블록(```) 없이 순수 JSON 문자열만 출력하라.
 
 {{
   "핵심뉴스": [
@@ -80,10 +81,25 @@ def summarize_news(articles):
 
     return response.output_text
 
+def clean_json_text(text):
+    text = text.strip()
+
+    if text.startswith("```json"):
+        text = text[len("```json"):].strip()
+    elif text.startswith("```"):
+        text = text[len("```"):].strip()
+
+    if text.endswith("```"):
+        text = text[:-3].strip()
+
+    return text
 
 # 디스코드 메시지 포맷
 def build_discord_message(summary_text):
-    data = json.loads(summary_text)
+    cleaned_text = clean_json_text(summary_text)
+    print("정리된 JSON 일부:", cleaned_text[:300])
+
+    data = json.loads(cleaned_text)
 
     now = datetime.now()
     weekday_kr = ["월", "화", "수", "목", "금", "토", "일"]
@@ -119,7 +135,6 @@ def build_discord_message(summary_text):
     }
 
     return embed
-
 
 # 디스코드 전송
 def send_to_discord(embed):
