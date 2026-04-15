@@ -3,6 +3,7 @@ from datetime import datetime
 from urllib.parse import quote
 import feedparser
 import requests
+import json
 from openai import OpenAI
 
 # 설정
@@ -43,23 +44,33 @@ def summarize_news(articles):
 
 {news_text}
 
-다음 형식으로 한국어로 정리해라.
+아래 형식의 JSON으로만 답해라.
+설명은 쓰지 말고 JSON만 출력해라.
 
-[출력 형식]
-## 1. 오늘의 핵심 AI 뉴스
-- 핵심 뉴스 5개를 bullet point로 정리
-
-## 2. 왜 중요한가
-- 3~5줄 bullet point로 정리
-
-## 3. 취업 준비생 관점 메모
-- 3줄 이내 bullet point로 정리
+{{
+  "핵심뉴스": [
+    "문장1",
+    "문장2",
+    "문장3",
+    "문장4",
+    "문장5"
+  ],
+  "왜중요한가": [
+    "문장1",
+    "문장2",
+    "문장3"
+  ],
+  "취업관점": [
+    "문장1",
+    "문장2",
+    "문장3"
+  ]
+}}
 
 조건:
 - 반드시 한국어
-- 너무 장황하지 않게
-- 디스코드에서 보기 좋게 정리
-- 각 항목은 bullet point(-) 사용
+- 각 문장은 bullet point로 바로 쓸 수 있게 짧고 명확하게
+- 제목(예: ## 1. 오늘의 핵심 AI 뉴스) 쓰지 말 것
 """
 
     response = client.responses.create(
@@ -71,67 +82,68 @@ def summarize_news(articles):
 
 
 # 디스코드 메시지 포맷
-def build_discord_message(summary):
+def build_discord_message(summary_text):
+    data = json.loads(summary_text)
+
     now = datetime.now()
     weekday_kr = ["월", "화", "수", "목", "금", "토", "일"]
     date_str = f"{now.year}년 {now.month}월 {now.day}일 ({weekday_kr[now.weekday()]})"
 
-    header = (
-        f"🤖 **AI 뉴스 봇** | {date_str}\n\n"
-        f"━━━━━━━━━━━━━━━━━━\n"
-        f"📌 **오늘의 AI 뉴스 브리핑**\n"
-        f"━━━━━━━━━━━━━━━━━━\n\n"
-    )
+    def to_bullets(items):
+        return "\n".join([f"• {item}" for item in items])
 
-    footer = "\n\n━━━━━━━━━━━━━━━━━━\n#AI #뉴스브리핑 #취업준비"
-
-    message = header + summary + footer
-    return message[:4000]  # embed description 최대 길이 고려
-
-
-# 디스코드 전송
-def send_to_discord(summary):
     embed = {
         "title": "📢 오늘의 AI 뉴스 브리핑",
+        "description": f"🤖 **AI 뉴스 봇** | {date_str}",
         "color": 0x00FFCC,
         "fields": [
             {
                 "name": "🧠 핵심 뉴스",
-                "value": summary.split("## 2.")[0].replace("## 1.", ""),
+                "value": to_bullets(data["핵심뉴스"])[:1000],
                 "inline": False
             },
             {
                 "name": "📊 왜 중요한가",
-                "value": "## 2." + summary.split("## 2.")[1].split("## 3.")[0],
+                "value": to_bullets(data["왜중요한가"])[:1000],
                 "inline": False
             },
             {
                 "name": "🚀 취업 관점",
-                "value": "## 3." + summary.split("## 3.")[1],
+                "value": to_bullets(data["취업관점"])[:1000],
                 "inline": False
             }
         ],
         "footer": {
-            "text": "AI 뉴스 봇"
+            "text": "AI 뉴스 봇 · #AI #뉴스브리핑 #취업준비"
         }
     }
 
-    requests.post(DISCORD_WEBHOOK_URL, json={"embeds": [embed]})
+    return embed
+
+
+# 디스코드 전송
+def send_to_discord(embed):
+    data = {
+        "embeds": [embed]
+    }
+
+    response = requests.post(DISCORD_WEBHOOK_URL, json=data, timeout=20)
+    print("디스코드 전송 상태:", response.status_code)
+    print("디스코드 응답:", response.text)
+    response.raise_for_status()
 
 
 # 실행
 def main():
-    print("웹훅 존재 여부:", DISCORD_WEBHOOK_URL is not None)
-
     articles = fetch_top_news(AI_NEWS_RSS)
     print("가져온 뉴스 개수:", len(articles))
     print("뉴스 샘플:", articles[:3])
 
-    summary = summarize_news(articles)
-    print("요약 결과 일부:", summary[:300])
+    summary_text = summarize_news(articles)
+    print("요약 결과 일부:", summary_text[:300])
 
-    message = build_discord_message(summary)
-    send_to_discord(message)
+    embed = build_discord_message(summary_text)
+    send_to_discord(embed)
 
 
 if __name__ == "__main__":
