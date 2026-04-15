@@ -1,11 +1,13 @@
 import os
 from datetime import datetime
+from urllib.parse import quote
 import feedparser
 import requests
 from openai import OpenAI
 
 # 설정
-AI_NEWS_RSS = "https://news.google.com/rss/search?q=AI OR 인공지능 OR LLM OR 생성형AI OR ChatGPT&hl=ko&gl=KR&ceid=KR:ko"
+query = quote("AI OR 인공지능 OR LLM OR 생성형AI OR ChatGPT")
+AI_NEWS_RSS = f"https://news.google.com/rss/search?q={query}&hl=ko&gl=KR&ceid=KR:ko"
 
 OPENAI_API_KEY = os.environ["OPENAI_API_KEY"]
 DISCORD_WEBHOOK_URL = os.environ["DISCORD_WEBHOOK_URL"]
@@ -84,7 +86,7 @@ def build_discord_message(summary):
     footer = "\n\n━━━━━━━━━━━━━━━━━━\n#AI #뉴스브리핑 #취업준비"
 
     message = header + summary + footer
-    return message[:4000]  # embed description은 4096자 제한 근처까지 가능
+    return message[:4000]  # embed description 최대 길이 고려
 
 
 # 디스코드 전송
@@ -105,6 +107,7 @@ def send_to_discord(message):
     response = requests.post(DISCORD_WEBHOOK_URL, json=data, timeout=20)
     print("디스코드 전송 상태:", response.status_code)
     print("디스코드 응답:", response.text)
+    response.raise_for_status()
 
 
 # 실행
