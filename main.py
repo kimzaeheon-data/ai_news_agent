@@ -90,24 +90,33 @@ def build_discord_message(summary):
 
 
 # 디스코드 전송
-def send_to_discord(message):
+def send_to_discord(summary):
     embed = {
         "title": "📢 오늘의 AI 뉴스 브리핑",
-        "description": message,
         "color": 0x00FFCC,
+        "fields": [
+            {
+                "name": "🧠 핵심 뉴스",
+                "value": summary.split("## 2.")[0].replace("## 1.", ""),
+                "inline": False
+            },
+            {
+                "name": "📊 왜 중요한가",
+                "value": "## 2." + summary.split("## 2.")[1].split("## 3.")[0],
+                "inline": False
+            },
+            {
+                "name": "🚀 취업 관점",
+                "value": "## 3." + summary.split("## 3.")[1],
+                "inline": False
+            }
+        ],
         "footer": {
             "text": "AI 뉴스 봇"
         }
     }
 
-    data = {
-        "embeds": [embed]
-    }
-
-    response = requests.post(DISCORD_WEBHOOK_URL, json=data, timeout=20)
-    print("디스코드 전송 상태:", response.status_code)
-    print("디스코드 응답:", response.text)
-    response.raise_for_status()
+    requests.post(DISCORD_WEBHOOK_URL, json={"embeds": [embed]})
 
 
 # 실행
