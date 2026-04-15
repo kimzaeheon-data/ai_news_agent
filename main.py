@@ -19,7 +19,11 @@ AI_NEWS_RSS = "https://news.google.com/rss/search?q=AIOR인공지능ORLLMOR생�
 OPENAI_API_KEY = os.environ["OPENAI_API_KEY"]
 DISCORD_WEBHOOK_URL = os.environ["DISCORD_WEBHOOK_URL"]
 
-print("웹훅:", DISCORD_WEBHOOK_URL)
+if not OPENAI_API_KEY:
+    raise ValueError("OPENAI_API_KEY가 없습니다.")
+
+if not DISCORD_WEBHOOK_URL:
+    raise ValueError("DISCORD_WEBHOOK_URL이 없습니다.")
 
 client = OpenAI(api_key=OPENAI_API_KEY)
 
@@ -63,17 +67,34 @@ def summarize_news(articles):
 #디스코드 전송
 
 def send_to_discord(message):
-  data = {"content":message}
-  requests.post(DISCORD_WEBHOOK_URL)
+    safe_message = message[:1900]  # 디스코드 길이 제한 대비
+
+    response = requests.post(
+        DISCORD_WEBHOOK_URL,
+        json={"content": safe_message},
+        timeout=20,
+    )
+
+    print("디스코드 전송 상태코드:", response.status_code)
+    print("디스코드 응답:", response.text)
+
+    response.raise_for_status()
 
 #실행
 def main():
-  articles = fetch_top_news(AI_NEWS_RSS)
-  summary = summarize_news(articles)
+    print("웹훅 존재 여부:", DISCORD_WEBHOOK_URL is not None)
 
-  final_message = f"📢 오늘의 AI 뉴스 브리핑\n\n{summary}"
-  send_to_discord(final_message)
+    articles = fetch_top_news(AI_NEWS_RSS)
+    print("가져온 뉴스 개수:", len(articles))
+    print("뉴스 샘플:", articles[:3])
+
+    summary = summarize_news(articles)
+    print("요약 결과 일부:", summary[:300])
+
+    message = f"📢 오늘의 AI 뉴스 브리핑\n\n{summary}"
+    send_to_discord(message)
+
 
 if __name__ == "__main__":
-  main()
+    main()
 
