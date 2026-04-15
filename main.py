@@ -130,7 +130,7 @@ def build_discord_message(summary_text):
             }
         ],
         "footer": {
-            "text": "AI 뉴스 봇 · #AI #뉴스브리핑 #취업준비"
+            "text": "AI 뉴스 봇 | 지금이야"
         }
     }
 
