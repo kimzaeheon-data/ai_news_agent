@@ -2,7 +2,7 @@ name: Daily AI News
 
 on:
   schedule:
-    - cron: "0 21 * * *"   # 한국 오전 6시
+    - cron: "13 10 * * *"   # 한국 오후 7시 13분
   workflow_dispatch:
 
 jobs:
